@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const cors = require('cors');
 const multer = require('multer');
+const fs = require('fs');
 
 const app = express();
 const PORT = 5529;
@@ -103,6 +104,65 @@ app.get('/api/categoryinfo', async (req, res) => {
   }
 });
 
+/**
+ * 获取文件下载地址
+ */
+app.get('/rest/2.0/xpan/multimedia/downloadInfo', async (req, res) => {
+  try {
+    const response = await axios.get('http://pan.baidu.com/rest/2.0/xpan/multimedia', {
+      params: req.query,
+    });
+    res.send(response.data);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+/**
+ * 下载图片
+ */
+app.get('/download/fileitem', async (req, res) => {
+  try {
+    const response = await axios.get(`${req?.query?.dlink}&access_token=${req?.query?.access_token}`,
+      {
+        responseType: 'arraybuffer',
+        headers: {
+          'User-Agent': 'pan.baidu.com',
+        }
+      },
+
+    );
+
+    // 将 Blob 数据发送给前端
+    res.set('Content-Type', 'image/jpeg');
+    res.send(response?.data);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.end(response.data, 'binary');
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+/**
+ * 创建文件夹
+ */
+app.post('/create/folder', async (req, res) => {
+  try {
+    const response = await axios.post(`https://pan.baidu.com/rest/2.0/xpan/file?method=create&access_token=${req?.body?.access_token}`, {
+      path: req.body.path,
+      isdir: req.body.isdir,
+    },
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        }
+      }
+    );
+    res.send(response.data);
+  } catch (error) {
+    console.error(error);
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`running on port ${PORT}`);
